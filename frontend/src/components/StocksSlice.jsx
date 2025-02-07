@@ -4,47 +4,36 @@ import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
 import axios from "axios";
 
 export const fetchStocks = createAsyncThunk("stocks/fetchStocks", async () => {
-  const response = await axios.get(`http://localhost:3000/api/stocks/`);
-  return response;
+  const response = await axios.get(
+    `https://allloan-assignment.onrender.com/api/stocks`
+  );
+  console.log("response from fetch stock", response.data);
+  return response.data;
 });
 
-// export const fetchStockData = createAsyncThunk(
-//   "stocks/fetchStockData",
-//   async ({ stockId, duration }, { dispatch }) => {
-//     let data = [];
-//     let complete = false;
-//     while (!complete) {
-//       const response = await axios.post(
-//         `http://localhost:3000/api/stocks/${stockId}`,
-//         { duration }
-//       );
-
-//       console.log("stocks data",response.data);
-//       data = [...data, ...response.data.entries];
-//       if (response.data.status === "COMPLETE") complete = true;
-//       await new Promise((r) => setTimeout(r, 2000));
-//     }
-//     return data;
-//   }
-// );
 export const fetchStockData = createAsyncThunk(
   "stocks/fetchStockData",
   async ({ stockId, duration }, { dispatch }) => {
+    console.log("Fetching stock data for:", stockId, duration);
+
     let data = [];
     let complete = false;
+    console.log("before fetching data");
     while (!complete) {
       const response = await axios.post(
-        `http://localhost:3000/api/stocks/${stockId}`,
+        `https://allloan-assignment.onrender.com/api/stocks/${stockId}`,
         { duration }
       );
 
-      console.log("Stock Data Response:", response.data); // Debugging
+      console.log("API Response id:", response.data.data);
+      console.log("Payload Sent:", { stockId, duration });
 
-      data = [...data, ...response.data.entries];
+      data = [...data, ...response.data.data];
 
-      if (response.data.complete) complete = true;
+      if (response.data.status === "COMPLETE") complete = true;
       await new Promise((r) => setTimeout(r, 2000));
     }
+    console.log("after fetching data");
     return data;
   }
 );
@@ -58,13 +47,15 @@ const stocksSlice = createSlice({
   extraReducers: (builder) => {
     builder
       .addCase(fetchStocks.fulfilled, (state, action) => {
-        state.stocks = action.payload;
+        console.log("Fetched 1 stock data:", action.payload);
+        state.stocks = action.payload || [];
       })
+
       .addCase(fetchStockData.pending, (state) => {
         state.loading = true;
       })
       .addCase(fetchStockData.fulfilled, (state, action) => {
-        state.stockData = action.payload;
+        state.stockData = action.payload || [];
         state.loading = false;
       });
   },

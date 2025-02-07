@@ -9,6 +9,9 @@ import {
   MenuItem,
   Select,
 } from "@mui/material";
+import ChartClearence from "./ChartClearence";
+import { Chart, registerables } from "chart.js";
+Chart.register(...registerables);
 
 const StockChart = () => {
   const dispatch = useDispatch();
@@ -16,19 +19,23 @@ const StockChart = () => {
   //redux state
   const { stocks, stockData, loading } = useSelector((state) => state.stocks);
 
+  console.log("stocks", stocks);
+  console.log("stock data", stockData);
   // local state for selected stock & duration
   const [selectedStock, setSelectedStock] = useState("");
   const [selectedDuration, setSelectedDuration] = useState("");
+
   useEffect(() => {
-    dispatch(fetchStocks());
-  }, [dispatch]);
+    if (stocks.length === 0) {
+      dispatch(fetchStocks());
+    }
+  }, [dispatch, stocks]);
 
-  // handle stock selection
   const handleStockChange = (e) => {
-    setSelectedStock(e.target.value);
-    setSelectedDuration(""); // Corrected
+    const newStock = e.target.value;
+    setSelectedStock(newStock);
+    setSelectedDuration(""); // Reset duration
   };
-
   // handle duration selection & fetch stock data
   const handleDurationChange = (e) => {
     const duration = e.target.value;
@@ -55,6 +62,7 @@ const StockChart = () => {
     ],
   };
 
+  console.log("chart data", chartData);
   return (
     <div style={{ width: "80%", margin: "auto", textAlign: "center" }}>
       <h2>Stock Chart</h2>
@@ -63,11 +71,13 @@ const StockChart = () => {
       <FormControl fullWidth>
         <InputLabel>Select Stock</InputLabel>
         <Select value={selectedStock} onChange={handleStockChange}>
-          {stocks?.map((stock) => (
-            <MenuItem key={stock.id} value={stock.id}>
-              {stock.name}
-            </MenuItem>
-          ))}
+          {Array.isArray(stocks)
+            ? stocks?.map((stock) => (
+                <MenuItem key={stock.id} value={stock.id}>
+                  {stock.name}
+                </MenuItem>
+              ))
+            : "Loading..."}
         </Select>
       </FormControl>
 
@@ -78,7 +88,7 @@ const StockChart = () => {
           <Select value={selectedDuration} onChange={handleDurationChange}>
             {stocks
               .find((stock) => stock.id === selectedStock)
-              ?.available_durations.map((duration) => (
+              ?.available?.map((duration) => (
                 <MenuItem key={duration} value={duration}>
                   {" "}
                   {duration}
@@ -90,7 +100,7 @@ const StockChart = () => {
 
       {/* Show Loading or Cahrt */}
       {loading ? (
-        <CircularProgress style={{ marginTop: "20px" }} />
+        <CircularProgress style={{ marginTop: "30px" }} />
       ) : (
         selectedStock &&
         selectedDuration &&
